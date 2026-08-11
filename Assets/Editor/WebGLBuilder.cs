@@ -4,6 +4,8 @@ public class WebGLBuilder
 {
     public static void Build()
     {
+        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+
         BuildPlayerOptions options = new BuildPlayerOptions();
         options.scenes = new[] {
             "Assets/Scenes/主场景.unity",
