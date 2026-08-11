@@ -1,16 +1,23 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class GameOverUI : MonoBehaviour
 {
     public string mainMenuScene = "主场景";
     public float delayBeforeShow = 1.5f;
+    public int scorePerObstacle = 5;
     private bool isGameOver = false;
     private bool gameOverShown = false;
     private float gameOverTime;
     private GameObject panel;
+    private GameObject scoreTextGo;
+    private Text scoreText;
+    private Text finalScoreText;
     private RectTransform buttonRect;
+    private int score = 0;
+    private HashSet<int> scoredObstacles = new HashSet<int>();
 
     void Start()
     {
@@ -26,12 +33,29 @@ public class GameOverUI : MonoBehaviour
         scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGo.AddComponent<GraphicRaycaster>();
 
+        // Score display
+        scoreTextGo = new GameObject("ScoreText");
+        scoreTextGo.transform.SetParent(canvasGo.transform, false);
+        RectTransform scoreRect = scoreTextGo.AddComponent<RectTransform>();
+        scoreRect.anchorMin = new Vector2(0.5f, 1f);
+        scoreRect.anchorMax = new Vector2(0.5f, 1f);
+        scoreRect.pivot = new Vector2(0.5f, 1f);
+        scoreRect.sizeDelta = new Vector2(300, 60);
+        scoreRect.anchoredPosition = new Vector2(0, -20);
+        scoreText = scoreTextGo.AddComponent<Text>();
+        scoreText.text = "Score: 0";
+        scoreText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        scoreText.fontSize = 36;
+        scoreText.alignment = TextAnchor.MiddleCenter;
+        scoreText.color = Color.white;
+
+        // Game Over panel
         panel = new GameObject("GameOverPanel");
         panel.transform.SetParent(canvasGo.transform, false);
         RectTransform panelRect = panel.AddComponent<RectTransform>();
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(600, 400);
+        panelRect.sizeDelta = new Vector2(600, 420);
         panelRect.anchoredPosition = Vector2.zero;
         Image panelImage = panel.AddComponent<Image>();
         panelImage.color = new Color(0.1f, 0.1f, 0.1f, 0.85f);
@@ -39,8 +63,8 @@ public class GameOverUI : MonoBehaviour
         GameObject textGo = new GameObject("GameOverText");
         textGo.transform.SetParent(panel.transform, false);
         RectTransform textRect = textGo.AddComponent<RectTransform>();
-        textRect.anchorMin = new Vector2(0.5f, 0.65f);
-        textRect.anchorMax = new Vector2(0.5f, 0.65f);
+        textRect.anchorMin = new Vector2(0.5f, 0.7f);
+        textRect.anchorMax = new Vector2(0.5f, 0.7f);
         textRect.sizeDelta = new Vector2(500, 100);
         textRect.anchoredPosition = Vector2.zero;
         Text text = textGo.AddComponent<Text>();
@@ -50,11 +74,26 @@ public class GameOverUI : MonoBehaviour
         text.alignment = TextAnchor.MiddleCenter;
         text.color = Color.red;
 
+        // Final score
+        GameObject finalScoreGo = new GameObject("FinalScoreText");
+        finalScoreGo.transform.SetParent(panel.transform, false);
+        RectTransform finalScoreRect = finalScoreGo.AddComponent<RectTransform>();
+        finalScoreRect.anchorMin = new Vector2(0.5f, 0.5f);
+        finalScoreRect.anchorMax = new Vector2(0.5f, 0.5f);
+        finalScoreRect.sizeDelta = new Vector2(400, 60);
+        finalScoreRect.anchoredPosition = Vector2.zero;
+        finalScoreText = finalScoreGo.AddComponent<Text>();
+        finalScoreText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        finalScoreText.fontSize = 40;
+        finalScoreText.alignment = TextAnchor.MiddleCenter;
+        finalScoreText.color = Color.white;
+
+        // Return button
         GameObject btnGo = new GameObject("ReturnButton");
         btnGo.transform.SetParent(panel.transform, false);
         RectTransform btnRect = btnGo.AddComponent<RectTransform>();
-        btnRect.anchorMin = new Vector2(0.5f, 0.25f);
-        btnRect.anchorMax = new Vector2(0.5f, 0.25f);
+        btnRect.anchorMin = new Vector2(0.5f, 0.2f);
+        btnRect.anchorMax = new Vector2(0.5f, 0.2f);
         btnRect.sizeDelta = new Vector2(260, 80);
         btnRect.anchoredPosition = Vector2.zero;
         Image btnImage = btnGo.AddComponent<Image>();
@@ -90,13 +129,20 @@ public class GameOverUI : MonoBehaviour
                 {
                     isGameOver = true;
                     gameOverTime = Time.time;
+                    scoreTextGo.SetActive(false);
                 }
             }
+        }
+
+        if (!gameOverShown)
+        {
+            CheckObstacleScoring();
         }
 
         if (isGameOver && !gameOverShown && Time.time - gameOverTime >= delayBeforeShow)
         {
             gameOverShown = true;
+            finalScoreText.text = "Score: " + score;
             panel.SetActive(true);
             Time.timeScale = 0;
         }
@@ -116,6 +162,21 @@ public class GameOverUI : MonoBehaviour
             {
                 Time.timeScale = 1;
                 SceneManager.LoadScene(mainMenuScene);
+            }
+        }
+    }
+
+    void CheckObstacleScoring()
+    {
+        GameObject[] obstacles = GameObject.FindGameObjectsWithTag("Obstacle");
+        foreach (GameObject obs in obstacles)
+        {
+            int id = obs.GetInstanceID();
+            if (!scoredObstacles.Contains(id) && obs.transform.position.x < -3f)
+            {
+                scoredObstacles.Add(id);
+                score += scorePerObstacle;
+                scoreText.text = "Score: " + score;
             }
         }
     }
