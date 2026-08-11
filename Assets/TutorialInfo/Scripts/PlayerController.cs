@@ -28,7 +28,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        if (jumpAction.triggered && isOnGround && !gameOver)
+        if ((jumpAction.triggered || Input.GetKeyDown(KeyCode.Space)) && isOnGround && !gameOver)
         {
             playerRb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             isOnGround = false;
